@@ -1,0 +1,7 @@
+name = "CudaRandomNumbers"
+uuid = "7b5f827a-bf76-42e9-88f8-d3b3c74dbfd6"
+authors = ["linus.weigand <linus.weigand@physik.uni-muenchen.de>"]
+version = "0.1.0"
+
+[deps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
