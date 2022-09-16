@@ -1,0 +1,3 @@
+module CudaRandomNumbers
+
+end # module
