@@ -1,5 +1,3 @@
-module CudaRandomNumbers
-
 using Random
 using CUDA
 using CUDA: i32
@@ -54,5 +52,3 @@ function poisson_rho_dep!(rng::CUDA.RNG, rho, λ::FloatType)
     rng.counter = remainder
     rho
 end
-
-end # module
