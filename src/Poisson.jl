@@ -3,7 +3,7 @@ using CUDA
 using CUDA: i32
 
 
-function poisson_rho_dep!(rng::CUDA.RNG, rho, λ::FloatType)
+function poisson_rho_dep!(rng::CUDA.RNG, rho::AnyCuArray, λ::FloatType)
 
     # The GPU kernel
     function kernel!(rho, λ::FloatType, seed::UInt32, counter::UInt32)
@@ -52,3 +52,23 @@ function poisson_rho_dep!(rng::CUDA.RNG, rho, λ::FloatType)
     rng.counter = remainder
     rho
 end
+
+# CPU version
+function poisson_rho_dep!(rng::Random.AbstractRNG, rho, λ::FloatType)
+
+    for i in eachindex(rho)
+        k = 0.0f0
+        p = 1.0f0
+        @inbounds L = exp(-λ*rho[i])
+        while true
+            k += 1.0f0
+            p *= Random.rand(rng, FloatType)
+            p <= L && break
+        end
+        rho[i] = k-1.0f0
+    end
+    return nothing
+end
+
+# RNG-less interface
+poisson_rho_dep!(rho, λ::FloatType) = poisson_rho_dep!(Random.Xoshiro(), rho, λ)

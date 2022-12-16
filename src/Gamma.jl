@@ -3,7 +3,7 @@ using CUDA
 using CUDA: i32
 
 
-function gamma_rho_dep!(rng::CUDA.RNG, rho)
+function gamma_rho_dep!(rng::CUDA.RNG, rho::AnyCuArray)
 
     # The GPU kernel
     function kernel!(rho, seed::UInt32, counter::UInt32)
@@ -24,7 +24,6 @@ function gamma_rho_dep!(rng::CUDA.RNG, rho)
                     @inbounds k = round(UInt32,rho[i])
                     @inbounds rho[i] = 0.0f0
                     for j=1:k
-                    
                         @inbounds rho[i] -= CUDA.log(Random.rand(device_rng, FloatType))
                     end
                 end
@@ -46,3 +45,21 @@ function gamma_rho_dep!(rng::CUDA.RNG, rho)
     rng.counter = remainder
     rho
 end
+
+
+# CPU version
+function gamma_rho_dep!(rng::Random.AbstractRNG, rho)
+    for i in eachindex(rho)
+        if rho[i]<FloatType(typemax(UInt32))
+            @inbounds k = round(UInt32,rho[i])
+            @inbounds rho[i] = 0.0f0
+            for j=1:k
+                @inbounds rho[i] -= log(Random.rand(rng, FloatType))
+            end
+        end
+    end
+    return nothing
+end
+
+# RNG-Less interface
+gamma_rho_dep!(rho) = gamma_rho_dep!(Random.Xoshiro(), rho)
