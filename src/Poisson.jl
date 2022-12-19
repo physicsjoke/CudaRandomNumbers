@@ -44,7 +44,7 @@ function PoissonADSampler(μ::Real)
     PoissonADSampler(promote(μ, s, d)..., L)
 end
 
-function rand(rng::AbstractRNG, sampler::PoissonADSampler)
+function rand(rng::AbstractRNG, sampler::PoissonADSampler, table=_fact_table_up_to_9)
     μ = sampler.μ
     s = sampler.s
     d = sampler.d
@@ -62,7 +62,7 @@ function rand(rng::AbstractRNG, sampler::PoissonADSampler)
         end
 
         # Step S
-        U = rand(rng, μType)
+        U = Random.rand(rng, μType)
         if d * U >= (μ - K)^3
             return K
         end
@@ -78,9 +78,9 @@ function rand(rng::AbstractRNG, sampler::PoissonADSampler)
 
         if K < FloatType(10.0)
             px = -μ
-            py =  μ^K/factorial_lookup_up_to_9(K, _fact_table_up_to_9)
+            py =  μ^K/factorial_lookup_up_to_9(K, table)
         else
-            δ  = FloatType(0.08333333333333333) /K
+            δ  = FloatType(0.08333333333333333) / K
             δ -= FloatType(4.8)*δ^3
             V  = (μ-K) / K
             px = K*log1pmx(V) - δ # avoids need for table
@@ -101,7 +101,7 @@ function rand(rng::AbstractRNG, sampler::PoissonADSampler)
     while true
         # Step E
         E = randexp(rng, μType)
-        U = 2 * rand(rng, μType) - one(μType)
+        U = 2 * Random.rand(rng, μType) - one(μType)
         T = FloatType(1.8) + copysign(E, U)
         if T <= FloatType(-0.6744)
             continue
@@ -120,7 +120,7 @@ function rand(rng::AbstractRNG, sampler::PoissonADSampler)
 
         if K < FloatType(10.0)
             px = -μ
-            py =  μ^K/factorial_lookup_up_to_9(K, _fact_table_up_to_9)
+            py =  μ^K/factorial_lookup_up_to_9(K, table)
         else
             δ  = FloatType(0.08333333333333333) /K
             δ -= FloatType(4.8)*δ^3
@@ -133,7 +133,7 @@ function rand(rng::AbstractRNG, sampler::PoissonADSampler)
         X2 =  X^2
         fx = -X2 / 2 # missing negation in pseudo-algorithm, but appears in fortran code.
         fy =  ω*(((c3*X2+c2)*X2+c1)*X2+c0)
-        
+
         c = FloatType(0.1069) / μ
 
         # Step H
@@ -144,4 +144,4 @@ function rand(rng::AbstractRNG, sampler::PoissonADSampler)
 end
 
 
-rand_poisson(rng::AbstractRNG, μ::Real) = rand(rng, PoissonADSampler(μ))
+rand_poisson(rng::AbstractRNG, μ::Real, table=_fact_table_up_to_9) = rand(rng, PoissonADSampler(μ), table)
