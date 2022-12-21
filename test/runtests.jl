@@ -24,7 +24,7 @@ using Random
                         @test cumulant(A, i) ≈ λ rtol=sqrt(10000/N) atol=1.0f-6
                     end
                 end
-                @testset "CPU: λ = $λ, N = $N" for λ in [1.0f0, 5.0f0, 30.0f0], N in [2^10, 2^16, 2^19, 2^22]
+                @testset "CPU: λ = $λ, N = $N" for λ in [1.0f0, 5.0f0, 30.0f0, 200f0, 2000f0], N in [2^10, 2^16, 2^19, 2^22, 2^26, 2^34]
                     B = ones(Float32, N) .* λ
                     for i in eachindex(B)
                         B[i] = rand_poisson(Random.default_rng(), B[i])
@@ -32,7 +32,7 @@ using Random
                     test_mean_variance(B, λ, N)
                     #test_higher_cumulants(B, λ, N, 5)
                 end
-                @testset "GPU: λ = $λ, N = $N" for λ in [1.0f0, 5.0f0, 30.0f0], N in [2^19]
+                @testset "GPU: λ = $λ, N = $N" for λ in [1.0f0, 5.0f0, 30.0f0, 200f0, 2000f0], N in [2^10, 2^16, 2^19, 2^22, 2^26, 2^34]
                     A = CUDA.ones(Float32, N) .* λ
 
                     function test_kernel!(rho::CuDeviceArray{Float32}, seed::UInt32, counter::UInt32)
@@ -40,12 +40,12 @@ using Random
                         @inbounds Random.seed!(device_rng, seed, counter)
                 
                         # grid-stride loop
-                        tid    = Int32(threadIdx().x)
-                        window = Int32((blockDim().x)        *  gridDim().x)
-                        offset = Int32((blockIdx().x - 1i32) * blockDim().x)
+                        tid    = threadIdx().x
+                        window = (blockDim().x)        *  gridDim().x
+                        offset = (blockIdx().x - 1i32) * blockDim().x
                 
                         while offset < length(rho)
-                            i = Int32(tid + offset)
+                            i = tid + offset
                             if i <=  length(rho)
                                 if  rho[i] >= zero(Float32)
                                     rho[i]  = rand_poisson(device_rng, rho[i])

@@ -12,29 +12,6 @@ using CUDA: i32
 #
 # Adapted from Distributions.jl at https://github.com/JuliaStats/Distributions.jl
 
-# const _fact_table_up_to_9 = Vector{FloatType}(undef, 9)
-# _fact_table_up_to_9[1] = FloatType(1.0)
-# _fact_table_up_to_9[2] = FloatType(2.0)
-# _fact_table_up_to_9[3] = FloatType(6.0)
-# _fact_table_up_to_9[4] = FloatType(24.0)
-# _fact_table_up_to_9[5] = FloatType(120.0)
-# _fact_table_up_to_9[6] = FloatType(720.0)
-# _fact_table_up_to_9[7] = FloatType(5040.0)
-# _fact_table_up_to_9[8] = FloatType(40320.0)
-# _fact_table_up_to_9[9] = FloatType(362880.0)
-
-# _fact_table_up_to_9 = Array{Float32}(undef, 9)
-# _fact_table_up_to_9[1] = Float32(1.0)
-# _fact_table_up_to_9[2] = Float32(2.0)
-# _fact_table_up_to_9[3] = Float32(6.0)
-# _fact_table_up_to_9[4] = Float32(24.0)
-# _fact_table_up_to_9[5] = Float32(120.0)
-# _fact_table_up_to_9[6] = Float32(720.0)
-# _fact_table_up_to_9[7] = Float32(5040.0)
-# _fact_table_up_to_9[8] = Float32(40320.0)
-# _fact_table_up_to_9[9] = Float32(362880.0)
-# cu_fact_table_up_to_9 = CuArray(_fact_table_up_to_9)
-
 function factorial_lookup_up_to_9(n::FloatType)
     n == zero(FloatType) && return one(FloatType)
     n ==  one(FloatType) && return one(FloatType)
