@@ -12,21 +12,41 @@ using CUDA: i32
 #
 # Adapted from Distributions.jl at https://github.com/JuliaStats/Distributions.jl
 
-const _fact_table_up_to_9 = Vector{FloatType}(undef, 9)
-_fact_table_up_to_9[1] = FloatType(1.0)
-_fact_table_up_to_9[2] = FloatType(2.0)
-_fact_table_up_to_9[3] = FloatType(6.0)
-_fact_table_up_to_9[4] = FloatType(24.0)
-_fact_table_up_to_9[5] = FloatType(120.0)
-_fact_table_up_to_9[6] = FloatType(720.0)
-_fact_table_up_to_9[7] = FloatType(5040.0)
-_fact_table_up_to_9[8] = FloatType(40320.0)
-_fact_table_up_to_9[9] = FloatType(362880.0)
+# const _fact_table_up_to_9 = Vector{FloatType}(undef, 9)
+# _fact_table_up_to_9[1] = FloatType(1.0)
+# _fact_table_up_to_9[2] = FloatType(2.0)
+# _fact_table_up_to_9[3] = FloatType(6.0)
+# _fact_table_up_to_9[4] = FloatType(24.0)
+# _fact_table_up_to_9[5] = FloatType(120.0)
+# _fact_table_up_to_9[6] = FloatType(720.0)
+# _fact_table_up_to_9[7] = FloatType(5040.0)
+# _fact_table_up_to_9[8] = FloatType(40320.0)
+# _fact_table_up_to_9[9] = FloatType(362880.0)
 
-function factorial_lookup_up_to_9(n::FloatType, table)
+# _fact_table_up_to_9 = Array{Float32}(undef, 9)
+# _fact_table_up_to_9[1] = Float32(1.0)
+# _fact_table_up_to_9[2] = Float32(2.0)
+# _fact_table_up_to_9[3] = Float32(6.0)
+# _fact_table_up_to_9[4] = Float32(24.0)
+# _fact_table_up_to_9[5] = Float32(120.0)
+# _fact_table_up_to_9[6] = Float32(720.0)
+# _fact_table_up_to_9[7] = Float32(5040.0)
+# _fact_table_up_to_9[8] = Float32(40320.0)
+# _fact_table_up_to_9[9] = Float32(362880.0)
+# cu_fact_table_up_to_9 = CuArray(_fact_table_up_to_9)
+
+function factorial_lookup_up_to_9(n::FloatType)
     n == zero(FloatType) && return one(FloatType)
-    @inbounds factorial = table[trunc(Int32, n)]
-    return factorial
+    n ==  one(FloatType) && return one(FloatType)
+    n == FloatType(2.0)  && return FloatType(2.0)
+    n == FloatType(3.0)  && return FloatType(6.0)
+    n == FloatType(4.0)  && return FloatType(24.0)
+    n == FloatType(5.0)  && return FloatType(120.0)
+    n == FloatType(6.0)  && return FloatType(720.0)
+    n == FloatType(7.0)  && return FloatType(5040.0)
+    n == FloatType(8.0)  && return FloatType(40320.0)
+    n == FloatType(9.0)  && return FloatType(362880.0)
+    n >= FloatType(10.0) && return NaN
 end
 
 struct PoissonADSampler{T<:Real}
@@ -44,7 +64,7 @@ function PoissonADSampler(μ::Real)
     PoissonADSampler(promote(μ, s, d)..., L)
 end
 
-function rand(rng::AbstractRNG, sampler::PoissonADSampler, table=_fact_table_up_to_9)
+function rand(rng::AbstractRNG, sampler::PoissonADSampler)
     μ = sampler.μ
     s = sampler.s
     d = sampler.d
@@ -78,7 +98,7 @@ function rand(rng::AbstractRNG, sampler::PoissonADSampler, table=_fact_table_up_
 
         if K < FloatType(10.0)
             px = -μ
-            py =  μ^K/factorial_lookup_up_to_9(K, table)
+            py =  μ^K/factorial_lookup_up_to_9(K)
         else
             δ  = FloatType(0.08333333333333333) / K
             δ -= FloatType(4.8)*δ^3
@@ -87,7 +107,7 @@ function rand(rng::AbstractRNG, sampler::PoissonADSampler, table=_fact_table_up_
             py = FloatType(0.3989422804014327) / sqrt(K)
         end
 
-        X  = (K-μ+FloatType(0.5f0)) / s
+        X  = (K-μ+FloatType(0.5)) / s
         X2 =  X^2
         fx = -X2 / 2 # missing negation in pseudo-algorithm, but appears in fortran code.
         fy =  ω*(((c3*X2+c2)*X2+c1)*X2+c0)
@@ -120,7 +140,7 @@ function rand(rng::AbstractRNG, sampler::PoissonADSampler, table=_fact_table_up_
 
         if K < FloatType(10.0)
             px = -μ
-            py =  μ^K/factorial_lookup_up_to_9(K, table)
+            py =  μ^K/factorial_lookup_up_to_9(K)
         else
             δ  = FloatType(0.08333333333333333) /K
             δ -= FloatType(4.8)*δ^3
@@ -129,7 +149,7 @@ function rand(rng::AbstractRNG, sampler::PoissonADSampler, table=_fact_table_up_
             py = FloatType(0.3989422804014327) / sqrt(K)
         end
 
-        X  = (K-μ+FloatType(0.5f0)) / s
+        X  = (K-μ+FloatType(0.5)) / s
         X2 =  X^2
         fx = -X2 / 2 # missing negation in pseudo-algorithm, but appears in fortran code.
         fy =  ω*(((c3*X2+c2)*X2+c1)*X2+c0)
@@ -144,4 +164,4 @@ function rand(rng::AbstractRNG, sampler::PoissonADSampler, table=_fact_table_up_
 end
 
 
-rand_poisson(rng::AbstractRNG, μ::Real, table=_fact_table_up_to_9) = rand(rng, PoissonADSampler(μ), table)
+rand_poisson(rng::AbstractRNG, μ::Real) = rand(rng, PoissonADSampler(μ))
