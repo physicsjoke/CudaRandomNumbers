@@ -80,6 +80,12 @@ git-tree-sha1 = "e7ff6cadf743c098e08fca25c91103ee4303c9bb"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 version = "1.15.6"
 
+[[deps.ChangePrecision]]
+deps = ["LinearAlgebra", "Random", "Statistics", "Test"]
+git-tree-sha1 = "34b5f8c65ae773d3d3baa6c11833252edd15f476"
+uuid = "3cb15238-376d-56a3-8042-d33272777c9a"
+version = "1.0.0"
+
 [[deps.ChangesOfVariables]]
 deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
 git-tree-sha1 = "38f7a08f19d8810338d4f5085211c7dfa5d5bdd8"
