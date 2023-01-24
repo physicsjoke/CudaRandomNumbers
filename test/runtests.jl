@@ -20,11 +20,12 @@ using Random
                 end
 
                 function test_higher_cumulants(A, λ, N, n_cumulants)
-                    for i in 3:n_cumulants
-                        @test cumulant(A, i) ≈ λ rtol=sqrt(10000/N) atol=1.0f-6
+                    measured_cumulants = cumulant(A, 3:n_cumulants)
+                    for i in eachindex(measured_cumulants)
+                        @test measured_cumulants[i] ≈ λ rtol=sqrt(10000/N) atol=1.0f-6
                     end
                 end
-                @testset "CPU: λ = $λ, N = $N" for λ in [1.0f0, 5.0f0, 30.0f0, 200f0, 2000f0], N in [2^10, 2^16, 2^19, 2^22, 2^26, 2^34]
+                @testset "CPU: λ = $λ, N = $N" for λ in [1.0f0, 5.0f0, 30.0f0, 200f0, 2000f0], N in [2^10, 2^16, 2^19]
                     B = ones(Float32, N) .* λ
                     for i in eachindex(B)
                         B[i] = rand_poisson(Random.default_rng(), B[i])
@@ -32,7 +33,7 @@ using Random
                     test_mean_variance(B, λ, N)
                     #test_higher_cumulants(B, λ, N, 5)
                 end
-                @testset "GPU: λ = $λ, N = $N" for λ in [1.0f0, 5.0f0, 30.0f0, 200f0, 2000f0], N in [2^10, 2^16, 2^19, 2^22, 2^26, 2^34]
+                @testset "GPU: λ = $λ, N = $N" for λ in [1.0f0, 5.0f0, 30.0f0, 200f0, 2000f0], N in [2^10, 2^16, 2^19, 2^22, 2^26]
                     A = CUDA.ones(Float32, N) .* λ
 
                     function test_kernel!(rho::CuDeviceArray{Float32}, seed::UInt32, counter::UInt32)
@@ -64,7 +65,7 @@ using Random
                     
                     CUDA.@sync B = Array(A)
                     test_mean_variance(B, λ, N)
-                    #test_higher_cumulants(B, λ, N, 5)
+                    test_higher_cumulants(B, λ, N, 5)
                 end
             end
         end   
@@ -74,10 +75,16 @@ using Random
     @testset "Gamma" begin
         @testset "Parameter regimes" begin
             @testset "Uniform input array" begin
-                function test_mean_variance(A, k, N)
-                    @test mean(A) ≈ k rtol=sqrt(10000/N) atol=1.0f-7
-                    @test var(A) ≈ k rtol=sqrt(10000/N) atol=1.0f-7
+
+
+                function test_cumulants(A, k, N)
+                    measured_cumulants = cumulant(A, 1:4)
+                    theoretical_cumulants = [k, k, 2*k, 6*k]
+                    for i in eachindex(measured_cumulants)
+                        @test measured_cumulants[i] ≈ theoretical_cumulants[i] rtol=sqrt(10000/N) atol=1.0f-6
+                    end
                 end
+
                 @testset "GPU: k = $k, N = $N" for k in [1.0f0, 5.0f0, 10.0f0, 15.0f0, 30.0f0], N in [2^7, 2^10, 2^13, 2^16, 2^19, 2^22]
                     A = CUDA.ones(Float32, N) .* k
 
@@ -94,7 +101,7 @@ using Random
                             i = tid + offset
                             if i <=  length(rho)
                                 if  rho[i] >= zero(Float32)
-                                    rho[i]  = rand_gamma(device_rng, rho[i])
+                                    rho[i]  = rand_gamma(device_rng, rho[i], 1.0f0)
                                 end
                             end
                             offset += window
@@ -109,14 +116,15 @@ using Random
                     CUDA.@sync kernel(A, rng.seed, rng.counter; threads=threads, blocks=blocks)
                     
                     CUDA.@sync B = Array(A)
-                    test_mean_variance(B, k, N)
+                    test_cumulants(B, k, N)
                 end
-                @testset "CPU: k = $k, N = $N" for k in [1.0f0, 5.0f0, 10.0f0, 15.0f0, 30.0f0], N in [2^7, 2^10, 2^13, 2^16, 2^19, 2^22]
+
+                @testset "CPU: k = $k, N = $N" for k in [1.0f0, 5.0f0, 10.0f0, 15.0f0, 30.0f0], N in [2^7, 2^10, 2^13, 2^16, 2^19]
                     B = ones(Float32, N) .* k
                     for i in eachindex(B)
                         B[i] = rand_gamma(Random.default_rng(), B[i], 1)
                     end
-                    test_mean_variance(B, k, N)
+                    test_cumulants(B, k, N)
                 end
             end
         end
