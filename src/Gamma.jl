@@ -1,6 +1,5 @@
 using Random
 using CUDA
-using CUDA: i32
 
 
 struct GammaMTSampler{T<:Real}
@@ -12,14 +11,14 @@ end
 
 function GammaMTSampler(shape::Real, scale::Real)
     # Setup (Step 1)
-    d = shape - 1//3
+    d = shape - 1.0f0/3.0f0
     c = inv(3 * sqrt(d))
 
     # Pre-compute scaling factor
     κ = d * scale
 
     # We also pre-compute the factor in the squeeze function
-    return GammaMTSampler(promote(d, c, κ, 331//10_000)...)
+    return GammaMTSampler(promote(d, c, κ, 331.0f0/10_000.0f0)...)
 end
 
 function rand(rng::AbstractRNG, s::GammaMTSampler{T}) where {T<:Real}
