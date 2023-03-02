@@ -2,6 +2,29 @@ using Random
 using CUDA
 using CUDA: i32
 
+
+# Naive sampler by counting exp variables
+#
+# Suitable for small μ
+#
+# Adapted from Distributions.jl at https://github.com/JuliaStats/Distributions.jl
+struct PoissonCountSampler{T<:Real}
+    μ::T
+end
+
+function rand(rng::AbstractRNG, s::PoissonCountSampler)
+    μ = s.μ
+    T = typeof(μ)
+    n = 0
+    c = -log(Random.rand(rng, T))
+    while c < μ
+        n += 1
+        c -= log(Random.rand(rng, T))
+    end
+    return n
+end
+
+
 # Algorithm from:
 #
 #   J.H. Ahrens, U. Dieter (1982)
@@ -11,6 +34,7 @@ using CUDA: i32
 #   For μ sufficiently large, (i.e. >= 10.0f0)
 #
 # Adapted from Distributions.jl at https://github.com/JuliaStats/Distributions.jl
+
 
 
 
@@ -144,6 +168,9 @@ function rand(rng::AbstractRNG, sampler::PoissonADSampler)
 end
 
 
-rand_poisson(rng::AbstractRNG, μ::Real) = rand(rng, PoissonADSampler(μ))
+function rand_poisson(rng::AbstractRNG, μ::Real)
+    μ >= 10.0f0 && return rand(rng, PoissonADSampler(μ))
+    return rand(rng, PoissonCountSampler(μ))
+end 
 
 
